@@ -1,0 +1,98 @@
+Trabalho II – Especificação
+Lembre que cada página acessada precisa ser trazida pelo menos uma vez para
+a memória física, logo, para qualquer algoritmo, há um limite mínimo de pelo
+menos uma falta de página para cada página acessada.
+As faltas adicionais provocadas por um mesma página são decorrentes de
+eventual limitação da memória física, ou seja, uma página precisou ser
+removida da memória física para ceder lugar a outra.
+10/21
+Trabalho II – Especificação
+Requisitos recomendados
+• incluir uma opção para listar o número de vezes que cada página foi
+carregada
+• mostrar estimativa do tamanho necessário em bytes para armazenar a
+tabela de páginas (de 1 nível)
+• modo didático: para uma memória física pequena, e.g., 32 KB, mostrar o
+estado da memória física ao longo da execução da simulação
+• nos algoritmos como NRU, FIFO, segunda chance, relógio, LRU, NFU, aging
+implementar parâmetro para escolher política de substituição local ou
+global
+11/21
+Trabalho II – Especificação
+Dependendo do segundo algoritmo de escolhido, outros parâmetros de entrada
+podem ser necessários, por exemplo:
+• frequência de interrupções do Sistema Operacional
+• pode ser simulada em termos de nº de instruções executadas
+• largura do contador (nº de bits)
+Quais algoritmos podem ser escolhidos?
+• cada grupo deve implementar o algoritmo Ótimo e escolher um dos demais:
+1. NRU
+2. FIFO
+3. segunda chance
+4. relógio
+5. LRU
+6. NFU
+7. envelhecimento (aging)
+8. conjunto de trabalho
+9. WSClock 12/21
+Trabalho II – Especificação
+Exemplo de (partes do) arquivo de entrada
+1 I0
+2 D0
+3 I0
+4 D0
+5 I0
+6 D0
+7 I0
+8 D1
+9 I0
+10 D1
+11 I0
+12 D1
+13 I0
+14 ...
+12194 ...
+12195 D64
+12196 I0
+12197 D1
+12198 I0
+12199 D56
+12200 I0
+12201 D55
+12202 I0
+12203 D1
+12204 I0
+12205 D1
+12206 I0
+12207 D2
+13/21
+Trabalho II – Especificação
+./trab-2 arquivo-1.txt 8MB
+A memória física comporta 2048 páginas.
+Há 15000 páginas distintas no arquivo.
+Com o algoritmo Ótimo ocorrem 16385 faltas de pagina.
+Com o algoritmo XYZ ocorrem 20137 faltas de pagina,
+atingindo 81,36% do desempenho do Ótimo.
+Deseja listar o numero de carregamentos (s/n)? n
+14/21
+Trabalho II – Especificação
+./trab-2 arquivo-1.txt 8MB
+A memória física comporta 2048 páginas.
+Há 15000 páginas distintas no arquivo.
+Com o algoritmo Ótimo ocorrem 16385 faltas de pagina.
+Com o algoritmo XYZ ocorrem 20137 faltas de pagina,
+atingindo 81,36% do desempenho do Ótimo.
+Deseja listar o numero de carregamentos (s/n)? s
+Página Otimo XYZ
+I0 2 57
+D0 1 1
+D2 2 5
+... 15/21
+Trabalho II – Especificação
+./trab-2 arquivo-1.txt 1GB
+A memória física comporta 262144 páginas.
+Há 15000 páginas distintas no arquivo.
+Com o algoritmo Ótimo ocorrem 15000 faltas de pagina.
+Com o algoritmo XYZ ocorrem 15000 faltas de pagina,
+atingindo 100% do desempenho do Ótimo.
+Deseja listar o numero de carregamentos (s/n)? n
