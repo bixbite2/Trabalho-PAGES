@@ -4,6 +4,6 @@
 #pragma once
 #include "main.h"
 
-int load_accesses(const char *path, Access *accesses, int max_count);
+int load_accesses(const char *path, Access **accesses, int *count);
 
 #endif

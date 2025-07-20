@@ -17,9 +17,9 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    Access *accesses = malloc(sizeof(Access) * 20000);
-    int count = load_accesses(argv[1], accesses, 20000);
-    if (count <= 0) {
+    Access *accesses = NULL;
+    int count = 0;
+    if (load_accesses(argv[1], &accesses, &count) <= 0) {
         printf("Failed to load accesses.\n");
         return 1;
     }

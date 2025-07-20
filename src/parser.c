@@ -1,13 +1,26 @@
 #include "parser.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-int load_accesses(const char *path, Access *accesses, int max_count) {
+int load_accesses(const char *path, Access **accesses, int *count) {
     FILE *file = fopen(path, "r");
     if (!file) return -1;
-    int i = 0;
-    while (i < max_count && fscanf(file, "%*d %15s", accesses[i].page) == 1) {
-        accesses[i].type = accesses[i].page[0];
-        i++;
+
+    char page_buffer[MAX_PAGE_NAME];
+    int capacity = 10000;
+    *count = 0;
+    *accesses = malloc(sizeof(Access) * capacity);
+
+    while (fscanf(file, "%s", page_buffer) == 1) {
+        if (*count >= capacity) {
+            capacity *= 2;
+            *accesses = realloc(*accesses, sizeof(Access) * capacity);
+        }
+        (*accesses)[*count].type = page_buffer[0];
+        strcpy((*accesses)[*count].page, page_buffer);
+        (*count)++;
     }
+
     fclose(file);
-    return i;
+    return *count;
 }
