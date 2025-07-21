@@ -16,7 +16,6 @@ int load_accesses(const char *path, Access **accesses, int *count) {
             capacity *= 2;
             *accesses = realloc(*accesses, sizeof(Access) * capacity);
         }
-        (*accesses)[*count].type = page_buffer[0];
         strcpy((*accesses)[*count].page, page_buffer);
         (*count)++;
     }

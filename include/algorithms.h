@@ -5,5 +5,5 @@
 #include "main.h"
 
 int optimal(Access *accesses, int count, int frame_count);
-int working_set(Access *accesses, int frame_count, int tau);
+int working_set(Access *accesses, int count, int frame_count, int tau);
 #endif

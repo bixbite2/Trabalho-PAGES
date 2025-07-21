@@ -11,7 +11,6 @@
 #define MAX_PAGE_NAME 16
 
 typedef struct {
-    char type;
     char page[MAX_PAGE_NAME];
 } Access;
 
