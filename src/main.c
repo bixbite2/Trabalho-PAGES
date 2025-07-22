@@ -17,11 +17,19 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int frame_count = atoi(argv[2]);
+    int frame_count = parse_memory_size(argv[2]);
     int tau = atoi(argv[3]);
 
-    printf("Optimal page faults: %d\n", optimal(accesses, count, frame_count));
-    printf("Working Set page faults: %d\n", working_set(accesses, count, frame_count, tau));
+    int optimal_faults = optimal(accesses, count, frame_count);
+    int ws_faults = working_set(accesses, count, frame_count, tau);
+
+    printf("Optimal page faults: %d\n", optimal_faults);
+    printf("Working Set page faults: %d\n", ws_faults);
+
+    if (optimal_faults > 0) {
+        double diff = (double)(ws_faults - optimal_faults) * 100.0 / optimal_faults;
+        printf("Working Set had %.6f%% more page faults than Optimal.\n", diff);
+    }
 
     free(accesses);
     return 0;

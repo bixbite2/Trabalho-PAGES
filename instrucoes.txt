@@ -1,0 +1,6 @@
+para rodar, precisas criar uma pasta chamada pages, dentro dela tens que ter os arquivos que queres ler
+
+1 - Rode Make
+
+2 - Rode ./my_app.out pages/texto_a_analisar.txt tamanhoKB_ou_MB_ou_GB Variável_Tau
+(Sendo tau a janela de tempo ou intervalo de referência do working set)

@@ -32,6 +32,15 @@ HashMap* create_hash_map() {
 
 void hash_map_put(HashMap *map, const char *key, int value) {
     unsigned long bucket_index = hash_function(key) % HASH_MAP_SIZE;
+    Node *current = map->buckets[bucket_index];
+    while (current) {
+        if (strcmp(current->key, key) == 0) {
+            current->value = value;
+            return;
+        }
+        current = current->next;
+    }
+
     Node *newNode = malloc(sizeof(Node));
     newNode->key = strdup(key);
     newNode->value = value;
@@ -49,6 +58,27 @@ int hash_map_get(HashMap *map, const char *key) {
         current = current->next;
     }
     return -1;
+}
+
+void hash_map_remove(HashMap *map, const char *key) {
+    unsigned long bucket_index = hash_function(key) % HASH_MAP_SIZE;
+    Node *current = map->buckets[bucket_index];
+    Node *prev = NULL;
+
+    while (current) {
+        if (strcmp(current->key, key) == 0) {
+            if (prev) {
+                prev->next = current->next;
+            } else {
+                map->buckets[bucket_index] = current->next;
+            }
+            free(current->key);
+            free(current);
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
 }
 
 void free_hash_map(HashMap *map) {
@@ -102,124 +132,127 @@ int optimal(Access *accesses, int count, int frame_count) {
     free(last_occurrence);
 
     // Step 3: Simulate page replacement.
+    HashMap *page_to_frame_index_optimal = create_hash_map();
     char **frames = calloc(frame_count, sizeof(char*));
     int *frame_next_use = calloc(frame_count, sizeof(int));
     int page_faults = 0;
+    int frames_used = 0;
 
     for (int i = 0; i < count; i++) {
         if (i % 1000000 == 0) {
             fprintf(stderr, "Simulating... %.2f%%\r", (double)i * 100.0 / count);
         }
 
-        int in_memory = 0;
-        for (int j = 0; j < frame_count; j++) {
-            if (frames[j] && strcmp(frames[j], accesses[i].page) == 0) {
-                in_memory = 1;
-                frame_next_use[j] = next_use[i];
-                break;
-            }
-        }
-
-        if (in_memory) continue;
-
-        page_faults++;
-
-        int empty_slot = -1;
-        for (int j = 0; j < frame_count; j++) {
-            if (!frames[j]) {
-                empty_slot = j;
-                break;
-            }
-        }
-
-        if (empty_slot != -1) {
-            frames[empty_slot] = accesses[i].page;
-            frame_next_use[empty_slot] = next_use[i];
+        if (hash_map_get(page_to_frame_index_optimal, accesses[i].page) != -1) { // Page is in memory
+            // No need to update next_use here as it's pre-calculated and won't change.
             continue;
         }
 
+        page_faults++;
+
+        if (frames_used < frame_count) { // There is an empty frame
+            frames[frames_used] = accesses[i].page;
+            frame_next_use[frames_used] = next_use[i];
+            hash_map_put(page_to_frame_index_optimal, accesses[i].page, frames_used);
+            frames_used++;
+            continue;
+        }
+
+        // Find the page with the farthest next use
         int farthest_index = 0;
         for (int j = 1; j < frame_count; j++) {
             if (frame_next_use[j] > frame_next_use[farthest_index]) {
                 farthest_index = j;
             }
         }
+
+        // Evict the page
+        hash_map_remove(page_to_frame_index_optimal, frames[farthest_index]);
+
+        // Place the new page
         frames[farthest_index] = accesses[i].page;
         frame_next_use[farthest_index] = next_use[i];
+        hash_map_put(page_to_frame_index_optimal, accesses[i].page, farthest_index);
     }
     fprintf(stderr, "Simulating... 100.00%%\n");
 
     free(next_use);
     free(frames);
     free(frame_next_use);
+    free_hash_map(page_to_frame_index_optimal);
 
     return page_faults;
 }
 
 int working_set(Access *accesses, int count, int frame_count, int tau)
 {
+    if (frame_count <= 0) return count;
+
+    HashMap *page_to_frame_index = create_hash_map();
     char **frames = calloc(frame_count, sizeof(char*));
     int *last_access = calloc(frame_count, sizeof(int));
     int page_faults = 0;
     int current_time = 0;
+    int frames_used = 0;
 
     for (int i = 0; i < count; i++) {
         current_time++;
-        char *current = accesses[i].page;
+        char *current_page = accesses[i].page;
 
-        int in_memory = 0;
-        int frame_index = -1;
-        for (int j = 0; j < frame_count; j++) {
-            if (frames[j] && strcmp(frames[j], current) == 0) {
-                in_memory = 1;
-                frame_index = j;
-                break;
-            }
-        }
+        int frame_index = hash_map_get(page_to_frame_index, current_page);
 
-        if (in_memory) {
+        if (frame_index != -1) { // Page is in memory
             last_access[frame_index] = current_time;
             continue;
         }
 
         page_faults++;
 
-        int empty_slot = -1;
-        for (int j = 0; j < frame_count; j++) {
-            if (!frames[j]) {
-                empty_slot = j;
-                break;
-            }
-        }
-
-        if (empty_slot != -1) {
-            frames[empty_slot] = strdup(current);
-            last_access[empty_slot] = current_time;
+        if (frames_used < frame_count) { // There is an empty frame
+            frames[frames_used] = strdup(current_page);
+            last_access[frames_used] = current_time;
+            hash_map_put(page_to_frame_index, current_page, frames_used);
+            frames_used++;
             continue;
         }
 
-        int lru_index = -1;
-        int min_time = current_time + 1;
+        // Page replacement
+        int evict_index = -1;
+        // First, try to find a page outside the working set window
         for (int j = 0; j < frame_count; j++) {
             if (current_time - last_access[j] > tau) {
-                lru_index = j;
+                evict_index = j;
                 break;
-            }
-            if (last_access[j] < min_time) {
-                min_time = last_access[j];
-                lru_index = j;
             }
         }
 
-        free(frames[lru_index]);
-        frames[lru_index] = strdup(current);
-        last_access[lru_index] = current_time;
+        // If no page is outside the window, evict the least recently used (LRU)
+        if (evict_index == -1) {
+            int lru_time = current_time;
+            for (int j = 0; j < frame_count; j++) {
+                if (last_access[j] < lru_time) {
+                    lru_time = last_access[j];
+                    evict_index = j;
+                }
+            }
+        }
+        
+        // Evict the page
+        hash_map_remove(page_to_frame_index, frames[evict_index]);
+        free(frames[evict_index]);
+
+        // Place the new page
+        frames[evict_index] = strdup(current_page);
+        last_access[evict_index] = current_time;
+        hash_map_put(page_to_frame_index, current_page, evict_index);
     }
 
-    for (int j = 0; j < frame_count; j++)
+    for (int j = 0; j < frames_used; j++) {
         free(frames[j]);
+    }
     free(frames);
     free(last_access);
+    free_hash_map(page_to_frame_index);
 
     return page_faults;
 }
